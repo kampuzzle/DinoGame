@@ -418,6 +418,9 @@ def manyPlaysResults(rounds):
     npResults = np.asarray(results)
     return (results, npResults.mean() - npResults.std())
 
+def crossover(dino1, dino2):
+    return 
+
 # crossover that generates two children, using random crossover point
 def crossover(dino1, dino2):
     child1 = []
@@ -437,6 +440,7 @@ def crossover(dino1, dino2):
                 child1[i].append(weight2[i][j])
                 child2[i].append(weight1[i][j])
     return child1, child2
+
 # mutation that changes a random gene to a random value
 def mutation(weight,mutation_rate):
     for i in range(len(weight)):
@@ -534,13 +538,13 @@ def dino_train(n_rounds, n_players):
         mean_value = np.mean(value)
         scores.append(mean_value)
         
-        # print("player ", i, " score: ", mean_value)
+        print("player ", i, " score: ", mean_value)
         if mean_value > top_score:
             top_score = mean_value
             best_player = new_players[i]
 
     # Seleciona os K melhores jogadores
-    dinos = selection(new_players, scores, k=200)
+    dinos = selection(new_players, scores, k=5)
 
     # Treina so os melhores jogadores
     for dino in dinos:

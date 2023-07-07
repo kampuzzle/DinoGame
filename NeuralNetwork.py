@@ -14,42 +14,42 @@ def first(x):
     return x[0]
 
 class DinoClassifier(KeyClassifier):
-    def __init__(self,config = None):
-        # if weights is None:
-        #     self.weights = np.random.rand(7, 2)  # Initialize random weights
-        # else: 
-        #     self.weights = weights
-        # self.bias = np.random.rand(1, 2)  # Initialize random bias
-
-
+    def __init__(self, config=None):
         self.inputs = []
         self.outputs = []
 
         np.random.seed(42)  # For reproducibility
         self.input_size = 7
-        self.hidden_size = 7  # Number of neurons in the intermediate layer
-        self.output_size = 2  # Number of possible outputs (jump or go down)
+        self.hidden_size = 7
+        self.output_size = 2
+        
         if config is not None:
-            self.W1 = config[0]
-            self.W2 = config[1]
-            self.b1 = config[2]
-            self.b2 = config[3]
-            return
+            self.W1, self.W2, self.b1, self.b2 = config
+        else:
+            self.initialize_weights_and_biases()
+    
+    def initialize_weights_and_biases(self):
         # Initialize weights randomly
         self.W1 = np.random.randn(self.input_size, self.hidden_size)
         self.W2 = np.random.randn(self.hidden_size, self.output_size)
-
-
 
         # Initialize biases as zeros
         self.b1 = np.zeros((1, self.hidden_size))
         self.b2 = np.zeros((1, self.output_size))
 
     def sigmoid(self, x):
-        return 1 / (1 + np.exp(-np.clip(x, -250, 250)))
-
+        pos_mask = (x >= 0)
+        neg_mask = ~pos_mask
+        sigmoid_pos = 1 / (1 + np.exp(-x[pos_mask]))
+        sigmoid_neg = np.exp(x[neg_mask]) / (1 + np.exp(x[neg_mask]))
+        result = np.empty_like(x)
+        result[pos_mask] = sigmoid_pos
+        result[neg_mask] = sigmoid_neg
+        return result
+    
     def softmax(self, x):
-        exp_scores = np.exp(x)
+        shifted_x = x - np.max(x, axis=1, keepdims=True)
+        exp_scores = np.exp(shifted_x)
         return exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
 
     def forward(self, X):
@@ -87,7 +87,9 @@ class DinoClassifier(KeyClassifier):
     def predict(self, X):
         # Predict the output
         probs = self.forward(X)
-        return np.argmax(probs, axis=1)
+        predictions = np.argmax(probs, axis=1)
+        return predictions
+    
     def get_weights(self):
         # put w1, w2, b1, b2 in a list
         return [self.W1, self.W2, self.b1, self.b2]
@@ -108,14 +110,17 @@ class DinoClassifier(KeyClassifier):
     
     def keySelector(self,distance, obHeight, speed, obType, nextObDistance, nextObHeight, nextObType):
         
-        x = np.array([distance/ 10, obHeight, speed, self.enumerateObType(obType), nextObDistance/ 10, nextObHeight, self.enumerateObType(nextObType)])
+        x = np.array([distance/10, obHeight, speed, self.enumerateObType(obType), nextObDistance/10, nextObHeight, self.enumerateObType(nextObType)])
         x = x.reshape(1, -1)
         self.inputs.append(x[0])
-        y = self.predict(x)
-        if y[0] == 0:
+        predictions = self.predict(x)
+        action = ""
+        if predictions[0] == 0:
             self.outputs.append(0)
-            return "K_DOWN"
-        elif y[0] == 1:
+            action = "K_DOWN"
+        elif predictions[0] == 1:
             self.outputs.append(1)
-            return "K_UP"
-        return "K_NO"
+            action = "K_UP"
+        else:
+            action = "K_NO"
+        return action
