@@ -418,9 +418,6 @@ def manyPlaysResults(rounds):
     npResults = np.asarray(results)
     return (results, npResults.mean() - npResults.std())
 
-def crossover(dino1, dino2):
-    return 
-
 # crossover that generates two children, using random crossover point
 def crossover(dino1, dino2):
     child1 = []
@@ -478,10 +475,9 @@ def enumerateY(y):
     else:
         return 0
 
-def dino_train(n_rounds, n_players):
+def dino_train(n_rounds, n_players, dinos):
     global aiPlayer
     global top_score
-    global dinos
 
     #load player data from csv as a numpy array
     player_data = pd.read_csv('logs.csv', header=None)
@@ -557,7 +553,7 @@ def dino_train(n_rounds, n_players):
         return
 
     # Chama recursivamente, coloca aqui um criterio de parada 
-    dino_train(n_rounds, n_players)
+    dino_train(n_rounds, n_players, dinos)
 
 
 def main():
@@ -567,7 +563,7 @@ def main():
 
     dinos = []
     top_score = 0
-    dino_train(5, 50)
+    dino_train(5, 30, dinos)
 
 
     # initial_state = [(15, 250), (18, 350), (20, 450), (1000, 550)]

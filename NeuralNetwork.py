@@ -84,6 +84,7 @@ class DinoClassifier(KeyClassifier):
             # Backpropagation
             self.backward(X, y, lr)
 
+                
     def predict(self, X):
         # Predict the output
         probs = self.forward(X)
