@@ -18,7 +18,6 @@ class DinoClassifier(KeyClassifier):
         self.inputs = []
         self.outputs = []
 
-        np.random.seed(42)  # For reproducibility
         self.input_size = 7
         self.hidden_size = 7
         self.output_size = 2
@@ -94,8 +93,6 @@ class DinoClassifier(KeyClassifier):
     def get_weights(self):
         # put w1, w2, b1, b2 in a list
         return [self.W1, self.W2, self.b1, self.b2]
-    
-        
     
     def enumerateObType(self, obType):
         # check if class of obType is __main__.SmallCactus

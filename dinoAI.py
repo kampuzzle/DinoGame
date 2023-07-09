@@ -327,9 +327,8 @@ def playGame():
                 logs.append((userInput, distance, obHeight, game_speed, obType, nextObDistance, nextObHeight, nextObType))
             
 
-        else:
-            userInput = aiPlayer.keySelector(distance, obHeight, game_speed, obType, nextObDistance, nextObHeight,
-                                             nextObType)
+        else:            
+            userInput = aiPlayer.keySelector(distance, obHeight, game_speed, obType, nextObDistance, nextObHeight,nextObType)
         
 
         if len(obstacles) == 0 or obstacles[-1].getXY()[0] < spawn_dist:
@@ -475,56 +474,53 @@ def enumerateY(y):
     else:
         return 0
 
-def dino_train(n_rounds, n_players, dinos):
+def treinamento(n_rounds, n_players, dinos):
     global aiPlayer
     global top_score
-
-    #load player data from csv as a numpy array
+    global runs_played
+    
+    #carrega os dados do jogador humano pro algoritmo para treinar a primeira rodada
     player_data = pd.read_csv('logs.csv', header=None)
-    # y is the first column, x is the rest
     y = player_data.iloc[:,0]
     X = player_data.iloc[:,1:]
-    #convert colum 3 and 6 using enumerateObType
     X[4] = X[4].apply(enumerateObType)
     X[7] = X[7].apply(enumerateObType)
 
-    #convert colum 0 using enumerateY
     y = y.apply(enumerateY)
     
     if(len(dinos) == 0):
-        # primeiro round, vmaos treinar todos os dinossauros com valores de jogares reais
-        # epochs: numero de vezes que o modelo vai ver o dataset
-        # lr: learning rate, quanto maior mais rapido o modelo aprende, mas pode nao convergir
+      
         for p in range(n_players):
             aiPlayer = DinoClassifier()
-            aiPlayer.fit(X,y,epochs=15,lr=0.05)
+            aiPlayer.fit(X,y,epochs=20,lr=0.05)
             dinos.append(aiPlayer)          
             res, value = manyPlaysResults(n_rounds)
+            print(res, value)
             best_player = aiPlayer       
             if value > top_score:
                 top_score = value
                 best_player = aiPlayer
         print("Melhor jogador: ", best_player)
         for dino in dinos: 
-            dino.fit(best_player.inputs,best_player.outputs,epochs=15,lr=0.05)
+            dino.fit(best_player.inputs,best_player.outputs,epochs=20,lr=0.05)
 
     new_players = []
-    # Aplicar aqui a heuristica de genetico
     for p in range(n_players):
-        # escolher dois pais aleatoriamente
+        # logica do algoritmo genetico
+        # escolha aleatoria dos pais
         parent1 = random.choice(dinos)
         parent2 = random.choice(dinos)
-        # fazer crossover
+
+        # crossover para geração de filhos
         child1, child2 = crossover(parent1, parent2)
-        # fazer mutacao
+        
+        # mutacao genetica
         child1 = mutation(child1,0.1)
         child2 = mutation(child2,0.1)
-        # criar dois novos jogadores com os pesos dos filhos
+        
+        # criação de novos jogadores com os novos pesos dos filhos
         new_players.append(DinoClassifier(child1))
         new_players.append(DinoClassifier(child2))
-        
-    
-
     
     best_player = new_players[0]
     scores = []
@@ -534,45 +530,40 @@ def dino_train(n_rounds, n_players, dinos):
         mean_value = np.mean(value)
         scores.append(mean_value)
         
-        print("player ", i, " score: ", mean_value)
+        # print("player ", i, " score: ", mean_value)
         if mean_value > top_score:
             top_score = mean_value
             best_player = new_players[i]
 
-    # Seleciona os K melhores jogadores
-    dinos = selection(new_players, scores, k=5)
+    k = 15
+    dinos = selection(new_players, scores, k=k)
+    k += 2
+    #aumenta a qnt de k para selecionar os k melhores dinos
 
-    # Treina so os melhores jogadores
     for dino in dinos:
-        dino.fit(best_player.inputs,best_player.outputs,epochs=10,lr=0.01)
+        dino.fit(best_player.inputs,best_player.outputs,epochs=20,lr=0.05)
     print("top score: ", top_score)
-
-    if top_score > 1000:
-       # Faz algo com o melhor jogador
+    
+    runs_played += 1
+    if runs_played < 20:
+        treinamento(n_rounds, n_players, dinos)
+    else:
+        print("Melhor jogador: ", best_player)
         print("top score: ", top_score)
-        return
-
-    # Chama recursivamente, coloca aqui um criterio de parada 
-    dino_train(n_rounds, n_players, dinos)
+        print("runs played: ", runs_played)
+        return best_player
 
 
 def main():
     global aiPlayer
     global dinos
     global top_score
+    global runs_played
 
     dinos = []
     top_score = 0
-    dino_train(5, 30, dinos)
-
-
-    # initial_state = [(15, 250), (18, 350), (20, 450), (1000, 550)]
-    # aiPlayer = KeySimplestClassifier(initial_state)
-    # best_state, best_value = gradient_ascent(initial_state, 5000)
-    # aiPlayer = KeySimplestClassifier(best_state)
-    # res, value = manyPlaysResults(30)
-    # npRes = np.asarray(res)
-    # print(res, npRes.mean(), npRes.std(), value)
+    runs_played = 0
+    treinamento(24, 50, dinos)
 
 
 main()
